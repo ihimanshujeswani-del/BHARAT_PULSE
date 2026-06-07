@@ -92,19 +92,21 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-primary" />
                     <span>
-                      {new Date(event.startDate).toLocaleDateString('en-IN', { dateStyle: 'medium' })} 
-                      {event.startDate !== event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('en-IN', { dateStyle: 'medium' })}`}
+                      {event.startDate ? new Date(event.startDate).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'TBD'} 
+                      {event.endDate && event.startDate !== event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('en-IN', { dateStyle: 'medium' })}`}
                     </span>
                   </div>
                 </div>
               </div>
               
               <div className="flex flex-col gap-3 min-w-[200px]">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold" asChild>
-                  <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                    Official Website <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
+                {event.eventUrl && (
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold" asChild>
+                    <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                      Official Website <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
                 <div className="text-center">
                   <span className="text-xs uppercase tracking-tighter text-muted-foreground font-bold">Event Status</span>
                   <div className="flex items-center justify-center gap-2 mt-1">
@@ -142,25 +144,27 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              {event.streamUrl && (
-                <div>
-                  <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
-                    <PlayCircle className="h-6 w-6 text-primary" />
-                    WATCH LIVE
-                  </h2>
-                  <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="space-y-1 text-center sm:text-left">
-                      <h3 className="font-bold text-lg">Live Coverage Available</h3>
-                      <p className="text-sm text-muted-foreground">Catch every moment of the action through the official streaming partner.</p>
-                    </div>
+              <div>
+                <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
+                  <PlayCircle className="h-6 w-6 text-primary" />
+                  WATCH LIVE
+                </h2>
+                <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                  <div className="space-y-1 text-center sm:text-left">
+                    <h3 className="font-bold text-lg">Live Coverage</h3>
+                    <p className="text-sm text-muted-foreground">Catch the action live through the official broadcasting partners.</p>
+                  </div>
+                  {event.streamUrl ? (
                     <Button asChild className="shrink-0 bg-primary hover:bg-primary/90">
                       <a href={event.streamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                         Open Stream <ExternalLink className="h-4 w-4" />
                       </a>
                     </Button>
-                  </div>
+                  ) : (
+                    <Badge variant="outline" className="h-10 px-4">Stream Not Yet Available</Badge>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
@@ -172,20 +176,26 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <span className="text-xs font-bold uppercase tracking-widest text-primary">Qualified Entries</span>
                   </div>
                   <div className="divide-y divide-border/50">
-                    {event.indianParticipants.map((participant, index) => (
-                      <div key={index} className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                            {participant.charAt(0)}
+                    {(event.indianParticipants || []).length > 0 ? (
+                      (event.indianParticipants || []).map((participant, index) => (
+                        <div key={index} className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                              {participant.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-semibold block">{participant}</span>
+                              <span className="text-xs text-muted-foreground">Qualified Athlete/Team</span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-semibold block">{participant}</span>
-                            <span className="text-xs text-muted-foreground">Qualified Athlete/Team</span>
-                          </div>
+                          <Flag className="h-4 w-4 text-accent" />
                         </div>
-                        <Flag className="h-4 w-4 text-accent" />
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No official participation data listed yet.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

@@ -29,8 +29,9 @@ export default function Home() {
   const filteredEvents = useMemo(() => {
     if (!firestoreEvents) return [];
     return firestoreEvents.filter((event) => {
-      const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           event.city.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = 
+        (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (event.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
       const matchesLevel = levelFilter === "all" || event.level === levelFilter;
       

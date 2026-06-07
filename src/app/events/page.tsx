@@ -1,27 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { EventCard } from "@/components/event-card";
-import { MOCK_EVENTS, MOCK_SPORTS } from "@/lib/mock-data";
+import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, LayoutGrid, List } from "lucide-react";
+import { Search, Filter, LayoutGrid, List, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { collection, query, orderBy } from "firebase/firestore";
+import { useFirestore } from "@/firebase/provider";
+import { Event } from "@/lib/types";
 
 export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
 
-  const filteredEvents = MOCK_EVENTS.filter((event) => {
-    const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
-    const matchesLevel = levelFilter === "all" || event.level === levelFilter;
-    
-    return matchesSearch && matchesSport && matchesLevel;
-  });
+  const db = useFirestore();
+  const eventsQuery = useMemo(() => 
+    db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
+  , [db]);
+  
+  const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery);
+
+  const filteredEvents = useMemo(() => {
+    if (!firestoreEvents) return [];
+    return firestoreEvents.filter((event) => {
+      const matchesSearch = 
+        (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (event.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+      const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
+      const matchesLevel = levelFilter === "all" || event.level === levelFilter;
+      
+      return matchesSearch && matchesSport && matchesLevel;
+    });
+  }, [firestoreEvents, searchQuery, sportFilter, levelFilter]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -82,7 +97,12 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {filteredEvents.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Syncing latest events...</p>
+          </div>
+        ) : filteredEvents.length > 0 ? (
           <div className="sports-grid">
             {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />

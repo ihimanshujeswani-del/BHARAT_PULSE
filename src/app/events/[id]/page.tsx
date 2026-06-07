@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
-import { MOCK_EVENTS } from "@/lib/mock-data";
 import { Event } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,24 +22,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     (db && id) ? doc(db, "events", id) : null
   , [db, id]);
   
-  const { data: firestoreEvent, loading } = useDoc<Event>(eventRef);
-  
-  // Use firestore data if available, fallback to mock data
-  const event = useMemo(() => {
-    if (firestoreEvent) return firestoreEvent;
-    // Fallback search in mock data only if not explicitly "not found" after loading
-    if (!loading && !firestoreEvent) {
-       return MOCK_EVENTS.find(e => e.id === id) || null;
-    }
-    return null;
-  }, [firestoreEvent, loading, id]);
+  const { data: event, loading } = useDoc<Event>(eventRef);
 
-  if (loading && !event) {
+  if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading event details...</p>
+          </div>
         </div>
       </div>
     );
@@ -51,7 +43,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <Trophy className="h-12 w-12 text-muted-foreground opacity-20" />
           <h2 className="text-2xl font-bold">Event Not Found</h2>
+          <p className="text-muted-foreground">This event may have been removed or the link is incorrect.</p>
           <Button asChild variant="outline">
             <Link href="/">Back to Home</Link>
           </Button>
@@ -152,12 +146,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
                     <PlayCircle className="h-6 w-6 text-primary" />
-                    STREAM LINK
+                    WATCH LIVE
                   </h2>
                   <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="space-y-1 text-center sm:text-left">
-                      <h3 className="font-bold text-lg">Watch Live Coverage</h3>
-                      <p className="text-sm text-muted-foreground">Catch every moment of the action through official streaming partners.</p>
+                      <h3 className="font-bold text-lg">Live Coverage Available</h3>
+                      <p className="text-sm text-muted-foreground">Catch every moment of the action through the official streaming partner.</p>
                     </div>
                     <Button asChild className="shrink-0 bg-primary hover:bg-primary/90">
                       <a href={event.streamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">

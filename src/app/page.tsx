@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { EventCard } from "@/components/event-card";
-import { MOCK_EVENTS, MOCK_SPORTS } from "@/lib/mock-data";
+import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Award, Clock, Search, Filter, Trophy, Loader2 } from "lucide-react";
@@ -26,20 +26,17 @@ export default function Home() {
   
   const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery);
 
-  // Fallback to mock data if Firestore is empty or loading
-  const allEvents = useMemo(() => {
-    if (firestoreEvents && firestoreEvents.length > 0) return firestoreEvents;
-    return MOCK_EVENTS;
-  }, [firestoreEvents]);
-
-  const filteredEvents = allEvents.filter((event) => {
-    const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
-    const matchesLevel = levelFilter === "all" || event.level === levelFilter;
-    
-    return matchesSearch && matchesSport && matchesLevel;
-  });
+  const filteredEvents = useMemo(() => {
+    if (!firestoreEvents) return [];
+    return firestoreEvents.filter((event) => {
+      const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           event.city.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
+      const matchesLevel = levelFilter === "all" || event.level === levelFilter;
+      
+      return matchesSearch && matchesSport && matchesLevel;
+    });
+  }, [firestoreEvents, searchQuery, sportFilter, levelFilter]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -136,7 +133,12 @@ export default function Home() {
             </div>
           </div>
 
-          {filteredEvents.length > 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-muted-foreground">Syncing latest events...</p>
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="sports-grid">
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
@@ -148,7 +150,7 @@ export default function Home() {
                 <Trophy className="h-8 w-8 text-muted-foreground opacity-20" />
               </div>
               <h3 className="text-xl font-bold mb-2">No events found</h3>
-              <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+              <p className="text-muted-foreground">Check back soon for new updates from our sports feed.</p>
             </div>
           )}
         </div>

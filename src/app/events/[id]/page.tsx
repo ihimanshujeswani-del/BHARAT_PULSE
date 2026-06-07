@@ -32,7 +32,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         {/* Header Section */}
         <section className="bg-card/50 border-b relative">
           <div className="container mx-auto px-4 py-8">
-            <Link href="/events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
               <ArrowLeft className="h-4 w-4" /> Back to Events
             </Link>
             
@@ -103,7 +103,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     { label: "Sport Category", value: event.sport },
                     { label: "Event Level", value: event.level },
                     { label: "Country", value: event.country },
-                    { label: "Host City", value: event.city },
                     { label: "Indian Status", value: event.indianParticipation ? "Participating" : "Not Participating" }
                   ].map((item, i) => (
                     <div key={i} className="p-4 rounded-lg bg-card border border-border/50 flex flex-col gap-1">

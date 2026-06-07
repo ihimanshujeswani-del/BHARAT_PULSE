@@ -1,21 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { EventCard } from "@/components/event-card";
 import { MOCK_EVENTS, MOCK_SPORTS } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Award, Clock, Search, Filter, Trophy } from "lucide-react";
+import { TrendingUp, Award, Clock, Search, Filter, Trophy, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { collection, query, orderBy } from "firebase/firestore";
+import { useFirestore } from "@/firebase/provider";
+import { Event } from "@/lib/types";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
+  
+  const db = useFirestore();
+  const eventsQuery = useMemo(() => 
+    db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
+  , [db]);
+  
+  const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery);
 
-  const filteredEvents = MOCK_EVENTS.filter((event) => {
+  // Fallback to mock data if Firestore is empty or loading
+  const allEvents = useMemo(() => {
+    if (firestoreEvents && firestoreEvents.length > 0) return firestoreEvents;
+    return MOCK_EVENTS;
+  }, [firestoreEvents]);
+
+  const filteredEvents = allEvents.filter((event) => {
     const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          event.city.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
@@ -68,12 +85,15 @@ export default function Home() {
       {/* Main Content */}
       <main id="explore" className="container mx-auto px-4 py-12 flex-1 scroll-mt-20">
         <div className="flex flex-col gap-8">
-          <div>
-            <div className="flex items-center gap-2 text-primary font-bold mb-2">
-              <Clock className="h-5 w-5" />
-              <span className="uppercase tracking-widest text-xs">Stay Updated</span>
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-primary font-bold mb-2">
+                <Clock className="h-5 w-5" />
+                <span className="uppercase tracking-widest text-xs">Stay Updated</span>
+              </div>
+              <h2 className="text-3xl font-bold font-headline">EXPLORE <span className="text-accent">EVENTS</span></h2>
             </div>
-            <h2 className="text-3xl font-bold font-headline">UPCOMING <span className="text-accent">EVENTS</span></h2>
+            {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
 
           {/* Search and Filters Bar */}

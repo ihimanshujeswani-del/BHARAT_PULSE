@@ -16,7 +16,11 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
     const unsubscribe = onSnapshot(
       ref,
       (doc) => {
-        setData(doc.data() || null);
+        if (doc.exists()) {
+          setData({ id: doc.id, ...doc.data() } as T);
+        } else {
+          setData(null);
+        }
         setLoading(false);
       },
       async (err) => {

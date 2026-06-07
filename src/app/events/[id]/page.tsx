@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { MOCK_EVENTS } from "@/lib/mock-data";
 import { Event } from "@/lib/types";
@@ -8,20 +8,57 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, MapPin, ExternalLink, ArrowLeft, 
-  Users, Info, Trophy, Flag, ShieldCheck, PlayCircle
+  Users, Info, Trophy, Flag, ShieldCheck, PlayCircle, Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import { doc } from "firebase/firestore";
+import { useFirestore } from "@/firebase/provider";
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [event, setEvent] = useState<Event | null>(null);
+  const db = useFirestore();
+  
+  const eventRef = useMemo(() => 
+    (db && id) ? doc(db, "events", id) : null
+  , [db, id]);
+  
+  const { data: firestoreEvent, loading } = useDoc<Event>(eventRef);
+  
+  // Use firestore data if available, fallback to mock data
+  const event = useMemo(() => {
+    if (firestoreEvent) return firestoreEvent;
+    // Fallback search in mock data only if not explicitly "not found" after loading
+    if (!loading && !firestoreEvent) {
+       return MOCK_EVENTS.find(e => e.id === id) || null;
+    }
+    return null;
+  }, [firestoreEvent, loading, id]);
 
-  useEffect(() => {
-    const found = MOCK_EVENTS.find(e => e.id === id);
-    if (found) setEvent(found);
-  }, [id]);
+  if (loading && !event) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
-  if (!event) return null;
+  if (!event) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <h2 className="text-2xl font-bold">Event Not Found</h2>
+          <Button asChild variant="outline">
+            <Link href="/">Back to Home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

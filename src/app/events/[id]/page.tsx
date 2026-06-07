@@ -11,7 +11,6 @@ import {
   Users, Info, Trophy, Flag, ShieldCheck, PlayCircle
 } from "lucide-react";
 import Link from "next/link";
-import { AthleteBriefing } from "@/components/athlete-briefing";
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -161,10 +160,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* Right Column: AI Briefing & Sidebars */}
+            {/* Right Column: Sidebars */}
             <div className="space-y-8">
-              <AthleteBriefing athleteNames={event.indianParticipants} />
-              
               <div className="p-6 rounded-xl bg-gradient-to-br from-secondary/50 to-card border border-border/50 space-y-4">
                 <div className="flex items-center gap-2 text-primary">
                   <ShieldCheck className="h-5 w-5" />

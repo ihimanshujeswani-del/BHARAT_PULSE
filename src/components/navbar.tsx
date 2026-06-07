@@ -23,9 +23,6 @@ export function Navbar() {
               <Search className="h-5 w-5" />
             </Link>
           </Button>
-          <Button className="hidden sm:flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-            Join Pulse
-          </Button>
         </div>
       </div>
     </nav>

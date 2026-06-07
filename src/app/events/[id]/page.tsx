@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useMemo } from "react";
+import { use, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { Event } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       </div>
     );
   }
+
+  const participants = Array.isArray(event.indianParticipants) ? event.indianParticipants : [];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -151,17 +153,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 </h2>
                 <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                   <div className="space-y-1 text-center sm:text-left">
-                    <h3 className="font-bold text-lg">Live Coverage</h3>
-                    <p className="text-sm text-muted-foreground">Catch the action live through the official broadcasting partners.</p>
+                    <h3 className="font-bold text-lg">Stream Coverage</h3>
+                    <p className="text-sm text-muted-foreground">Watch the event live through official broadcasting channels.</p>
                   </div>
                   {event.streamUrl ? (
                     <Button asChild className="shrink-0 bg-primary hover:bg-primary/90">
                       <a href={event.streamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                        Open Stream <ExternalLink className="h-4 w-4" />
+                        Open Stream Link <ExternalLink className="h-4 w-4" />
                       </a>
                     </Button>
                   ) : (
-                    <Badge variant="outline" className="h-10 px-4">Stream Not Yet Available</Badge>
+                    <Badge variant="outline" className="h-10 px-4">Link Not Available Yet</Badge>
                   )}
                 </div>
               </div>
@@ -176,8 +178,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <span className="text-xs font-bold uppercase tracking-widest text-primary">Qualified Entries</span>
                   </div>
                   <div className="divide-y divide-border/50">
-                    {(event.indianParticipants || []).length > 0 ? (
-                      (event.indianParticipants || []).map((participant, index) => (
+                    {participants.length > 0 ? (
+                      participants.map((participant, index) => (
                         <div key={index} className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -211,11 +213,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 <p className="text-sm text-muted-foreground">
                   This event data is synchronized with the Central Sports Repository and verified through official federation sources.
                 </p>
-                <div className="pt-2">
-                   <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/10 text-xs h-8">
-                    View Federation Data
-                  </Button>
-                </div>
               </div>
 
               <div className="flex items-center gap-4 justify-center py-4 opacity-50 grayscale">

@@ -6,21 +6,30 @@ import { EventCard } from "@/components/event-card";
 import { MOCK_EVENTS, MOCK_SPORTS } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Award, Clock } from "lucide-react";
+import { TrendingUp, Award, Clock, Search, Filter, Trophy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sportFilter, setSportFilter] = useState("all");
+  const [levelFilter, setLevelFilter] = useState("all");
 
-  const filteredEvents = activeFilter === "all" 
-    ? MOCK_EVENTS 
-    : MOCK_EVENTS.filter(e => e.sportSlug === activeFilter);
+  const filteredEvents = MOCK_EVENTS.filter((event) => {
+    const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.city.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
+    const matchesLevel = levelFilter === "all" || event.level === levelFilter;
+    
+    return matchesSearch && matchesSport && matchesLevel;
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-12">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-12 border-b">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl">
             <Badge className="mb-4 bg-accent/20 text-accent border-accent/20 px-3 py-1">
@@ -33,8 +42,8 @@ export default function Home() {
               Tracking every stride, every shot, and every win for Indian athletes across the globe. Your dedicated hub for international and national sports events.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8">
-                Explore Events
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8" asChild>
+                <a href="#explore">Explore Events</a>
               </Button>
               <div className="flex items-center gap-4 text-sm font-medium">
                 <div className="flex items-center gap-1.5">
@@ -57,8 +66,8 @@ export default function Home() {
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12 flex-1">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <main id="explore" className="container mx-auto px-4 py-12 flex-1 scroll-mt-20">
+        <div className="flex flex-col gap-8">
           <div>
             <div className="flex items-center gap-2 text-primary font-bold mb-2">
               <Clock className="h-5 w-5" />
@@ -66,39 +75,63 @@ export default function Home() {
             </div>
             <h2 className="text-3xl font-bold font-headline">UPCOMING <span className="text-accent">EVENTS</span></h2>
           </div>
-          
-          <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-            {MOCK_SPORTS.map((sport) => (
-              <Button
-                key={sport.id}
-                variant={activeFilter === sport.slug ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveFilter(sport.slug)}
-                className={`rounded-full border-border/50 ${
-                  activeFilter === sport.slug ? "bg-primary text-primary-foreground" : "hover:border-primary/50"
-                }`}
-              >
-                {sport.name}
-              </Button>
-            ))}
-          </div>
-        </div>
 
-        {filteredEvents.length > 0 ? (
-          <div className="sports-grid">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="bg-secondary p-4 rounded-full mb-4">
-              <Trophy className="h-8 w-8 text-muted-foreground opacity-20" />
+          {/* Search and Filters Bar */}
+          <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by event name or city..."
+                className="pl-10 bg-background border-border/50 focus:ring-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <h3 className="text-xl font-bold mb-2">No events found</h3>
-            <p className="text-muted-foreground">Try a different sport filter or check back later.</p>
+            
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-primary" />
+                <Select value={sportFilter} onValueChange={setSportFilter}>
+                  <SelectTrigger className="w-[160px] bg-background border-border/50">
+                    <SelectValue placeholder="All Sports" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOCK_SPORTS.map(s => (
+                      <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger className="w-[160px] bg-background border-border/50">
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="International">International</SelectItem>
+                  <SelectItem value="National">National</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        )}
+
+          {filteredEvents.length > 0 ? (
+            <div className="sports-grid">
+              {filteredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="bg-secondary p-4 rounded-full mb-4">
+                <Trophy className="h-8 w-8 text-muted-foreground opacity-20" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">No events found</h3>
+              <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Footer */}

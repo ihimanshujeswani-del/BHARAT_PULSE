@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trophy, Search, Home, Calendar } from "lucide-react";
+import { Trophy, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
@@ -17,18 +17,9 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="/" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
-            <Home className="h-4 w-4" /> Home
-          </Link>
-          <Link href="/events" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
-            <Calendar className="h-4 w-4" /> All Events
-          </Link>
-        </div>
-
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/events">
+          <Button variant="ghost" size="icon" asChild className="md:hidden">
+            <Link href="#explore">
               <Search className="h-5 w-5" />
             </Link>
           </Button>

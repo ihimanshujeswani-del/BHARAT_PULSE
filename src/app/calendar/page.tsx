@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, query, orderBy, where } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 import { Event } from "@/lib/types";
 import { 
@@ -12,7 +12,10 @@ import {
   eachDayOfInterval, 
   format, 
   isSameDay, 
-  parseISO 
+  parseISO,
+  isWithinInterval,
+  startOfDay,
+  endOfDay
 } from "date-fns";
 import { Calendar as CalendarIcon, ChevronRight, Loader2, Trophy } from "lucide-react";
 import Link from "next/link";
@@ -35,24 +38,34 @@ export default function CalendarPage() {
   }, [weekStart, weekEnd]);
 
   // Fetch all events
-  // Note: We could use Firestore 'where' filters here, but for an MVP with limited data,
-  // fetching and filtering on client is fine. If performance becomes an issue, 
-  // we would add where("startDate", ">=", weekStartIso) etc.
   const eventsQuery = useMemo(() => 
     db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
   , [db]);
   
   const { data: events, loading } = useCollection<Event>(eventsQuery);
 
+  // Group events by day, showing on every day between startDate and endDate inclusive
   const eventsByDay = useMemo(() => {
     const map: Record<string, Event[]> = {};
+    
+    if (!events) return map;
+
     weekDays.forEach(day => {
-      const dateStr = format(day, "yyyy-MM-dd");
-      map[dateStr] = events?.filter(event => {
-        // Event startDate is usually YYYY-MM-DD from the form input
-        return event.startDate === dateStr;
-      }) || [];
+      const dateKey = format(day, "yyyy-MM-dd");
+      const dayStart = startOfDay(day);
+      
+      map[dateKey] = events.filter(event => {
+        try {
+          const start = startOfDay(parseISO(event.startDate));
+          const end = endOfDay(parseISO(event.endDate || event.startDate));
+          
+          return isWithinInterval(dayStart, { start, end });
+        } catch (e) {
+          return false;
+        }
+      });
     });
+    
     return map;
   }, [events, weekDays]);
 
@@ -107,7 +120,7 @@ export default function CalendarPage() {
                     {dayEvents.length > 0 ? (
                       dayEvents.map((event) => (
                         <Link 
-                          key={event.id} 
+                          key={`${event.id}-${dateKey}`} 
                           href={`/events/${event.id}`}
                           className="group block p-3 rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1"
                         >

@@ -21,4 +21,5 @@ export interface Event {
   qualificationEvent: boolean;
   status: 'Upcoming' | 'Live' | 'Completed';
   eventUrl: string;
+  streamUrl?: string;
 }

@@ -7,8 +7,8 @@ import { Event } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Calendar, MapPin, Globe, ExternalLink, ArrowLeft, 
-  Users, Info, Trophy, Flag, ShieldCheck 
+  Calendar, MapPin, ExternalLink, ArrowLeft, 
+  Users, Info, Trophy, Flag, ShieldCheck, PlayCircle
 } from "lucide-react";
 import Link from "next/link";
 import { AthleteBriefing } from "@/components/athlete-briefing";
@@ -90,7 +90,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         {/* Content Section */}
         <section className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Left Column: Details & Matrix */}
+            {/* Left Column: Details & Participation */}
             <div className="lg:col-span-2 space-y-12">
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
@@ -102,8 +102,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     { label: "Competition Type", value: event.eventType },
                     { label: "Sport Category", value: event.sport },
                     { label: "Event Level", value: event.level },
-                    { label: "Country", value: event.country },
-                    { label: "Indian Status", value: event.indianParticipation ? "Participating" : "Not Participating" }
+                    { label: "Country", value: event.country }
                   ].map((item, i) => (
                     <div key={i} className="p-4 rounded-lg bg-card border border-border/50 flex flex-col gap-1">
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{item.label}</span>
@@ -112,6 +111,26 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                   ))}
                 </div>
               </div>
+
+              {event.streamUrl && (
+                <div>
+                  <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">
+                    <PlayCircle className="h-6 w-6 text-primary" />
+                    STREAM LINK
+                  </h2>
+                  <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="space-y-1 text-center sm:text-left">
+                      <h3 className="font-bold text-lg">Watch Live Coverage</h3>
+                      <p className="text-sm text-muted-foreground">Catch every moment of the action through official streaming partners.</p>
+                    </div>
+                    <Button asChild className="shrink-0 bg-primary hover:bg-primary/90">
+                      <a href={event.streamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                        Open Stream <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h2 className="text-2xl font-bold font-headline mb-6 flex items-center gap-2">

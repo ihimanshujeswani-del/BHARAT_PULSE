@@ -27,6 +27,7 @@ export const MOCK_EVENTS: Event[] = [
     qualificationEvent: false,
     status: 'Upcoming',
     eventUrl: 'https://www.bcci.tv',
+    streamUrl: 'https://www.hotstar.com/sports/cricket',
   },
   {
     id: 'e2',
@@ -44,6 +45,7 @@ export const MOCK_EVENTS: Event[] = [
     qualificationEvent: true,
     status: 'Upcoming',
     eventUrl: 'https://www.allenglandbadminton.com',
+    streamUrl: 'https://www.youtube.com/@bwftv',
   },
   {
     id: 'e3',
@@ -61,6 +63,7 @@ export const MOCK_EVENTS: Event[] = [
     qualificationEvent: true,
     status: 'Upcoming',
     eventUrl: 'https://uww.org',
+    streamUrl: 'https://uww.org/uww-plus',
   },
   {
     id: 'e4',
@@ -78,6 +81,7 @@ export const MOCK_EVENTS: Event[] = [
     qualificationEvent: true,
     status: 'Upcoming',
     eventUrl: 'https://www.thenrai.in',
+    streamUrl: 'https://www.youtube.com/@TheNRAI',
   },
   {
     id: 'e5',
@@ -95,5 +99,6 @@ export const MOCK_EVENTS: Event[] = [
     qualificationEvent: false,
     status: 'Upcoming',
     eventUrl: 'https://worldathletics.org',
+    streamUrl: 'https://www.worldathletics.org/videos',
   }
 ];

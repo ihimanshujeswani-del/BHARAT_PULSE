@@ -1,4 +1,1 @@
-import { config } from 'dotenv';
-config();
-
-import '@/ai/flows/athlete-performance-summary.ts';
+// This file was used for testing GenAI flows and is no longer needed.

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, CollectionReference, Query } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 import { Event } from "@/lib/types";
 import { 
@@ -26,7 +26,6 @@ export default function CalendarPage() {
   const db = useFirestore();
   
   // Current view date (default to today)
-  // Structured this way so navigation buttons can be added later by updating this state
   const [viewDate] = useState(new Date());
 
   // Calculate Monday to Sunday for the current week of viewDate
@@ -39,7 +38,7 @@ export default function CalendarPage() {
 
   // Fetch all events
   const eventsQuery = useMemo(() => 
-    db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
+    db ? query(collection(db, "events") as CollectionReference<Event>, orderBy("startDate", "asc")) : null
   , [db]);
   
   const { data: events, loading } = useCollection<Event>(eventsQuery);

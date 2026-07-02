@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import { doc } from "firebase/firestore";
+import { doc, DocumentReference } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +19,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const db = useFirestore();
   
   const eventRef = useMemo(() => 
-    (db && id) ? doc(db, "events", id) : null
+    (db && id) ? doc(db, "events", id) as DocumentReference<Event> : null
   , [db, id]);
   
   const { data: event, loading } = useDoc<Event>(eventRef);

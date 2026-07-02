@@ -10,7 +10,7 @@ import { TrendingUp, Award, Clock, Search, Filter, Trophy, Loader2 } from "lucid
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, CollectionReference } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 import { Event } from "@/lib/types";
 
@@ -21,7 +21,7 @@ export default function Home() {
   
   const db = useFirestore();
   const eventsQuery = useMemo(() => 
-    db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
+    db ? query(collection(db, "events") as CollectionReference<Event>, orderBy("startDate", "asc")) : null
   , [db]);
   
   const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery);

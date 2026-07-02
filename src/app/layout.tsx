@@ -1,6 +1,8 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 export const metadata: Metadata = {
   title: 'BharatPulse Sports - India Sports Tracker',
@@ -23,6 +25,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
+        <GoogleAnalytics gaId="G-C3CHF21X9S" />
       </body>
     </html>
   );

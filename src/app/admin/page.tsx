@@ -15,7 +15,7 @@ import { useCollection } from "@/firebase/firestore/use-collection";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Event } from "@/lib/types";
-import { ArrowLeft, Loader2, Save, PlusCircle, Trash2, Archive, ArchiveRestore } from "lucide-react";
+import { ArrowLeft, Loader2, Save, PlusCircle, Trash2, Archive, ArchiveRestore, Globe, Tv } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -157,12 +157,12 @@ export default function AdminPage() {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Event Name</Label>
-                          <Input id="name" name="name" required value={formData.name} onChange={handleInputChange} />
+                          <Input id="name" name="name" placeholder="e.g. World Athletics Championships" required value={formData.name} onChange={handleInputChange} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="sport">Sport Name</Label>
-                            <Input id="sport" name="sport" required value={formData.sport} onChange={handleInputChange} />
+                            <Input id="sport" name="sport" placeholder="e.g. Javelin Throw" required value={formData.sport} onChange={handleInputChange} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="sportSlug">Category</Label>
@@ -185,6 +185,10 @@ export default function AdminPage() {
                             <Label htmlFor="endDate">End Date</Label>
                             <Input id="endDate" name="endDate" type="date" required value={formData.endDate} onChange={handleInputChange} />
                           </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="eventType">Event Type</Label>
+                          <Input id="eventType" name="eventType" placeholder="e.g. Championship, Tournament, League" value={formData.eventType} onChange={handleInputChange} />
                         </div>
                       </div>
                       <div className="space-y-4">
@@ -211,22 +215,46 @@ export default function AdminPage() {
                             </Select>
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input id="city" name="city" required value={formData.city} onChange={handleInputChange} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" name="city" required value={formData.city} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" name="country" required value={formData.country} onChange={handleInputChange} />
+                          </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="country">Country</Label>
-                          <Input id="country" name="country" required value={formData.country} onChange={handleInputChange} />
+                          <Label htmlFor="eventUrl" className="flex items-center gap-2">
+                            <Globe className="h-3.5 w-3.5" /> Official Website URL
+                          </Label>
+                          <Input id="eventUrl" name="eventUrl" placeholder="https://..." value={formData.eventUrl} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="streamUrl" className="flex items-center gap-2">
+                            <Tv className="h-3.5 w-3.5" /> Stream URL
+                          </Label>
+                          <Input id="streamUrl" name="streamUrl" placeholder="https://watch..." value={formData.streamUrl} onChange={handleInputChange} />
                         </div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="indianParticipants">Indian Participants (Comma separated)</Label>
-                      <Textarea id="indianParticipants" name="indianParticipants" value={formData.indianParticipants} onChange={handleInputChange} />
+                      <Textarea id="indianParticipants" name="indianParticipants" placeholder="e.g. Neeraj Chopra, Kishore Jena" value={formData.indianParticipants} onChange={handleInputChange} />
                     </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Event
+                    
+                    <div className="flex items-center space-x-2 py-2">
+                      <Switch 
+                        id="qualificationEvent" 
+                        checked={formData.qualificationEvent} 
+                        onCheckedChange={(checked) => setFormData(p => ({...p, qualificationEvent: checked}))} 
+                      />
+                      <Label htmlFor="qualificationEvent">This is a qualification event (e.g. Olympic Qualifier)</Label>
+                    </div>
+
+                    <Button type="submit" className="w-full h-12 text-base font-bold" disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Sports Event
                     </Button>
                   </form>
                 </CardContent>
@@ -235,7 +263,7 @@ export default function AdminPage() {
 
             {/* Management Column */}
             <div className="space-y-6">
-              <h2 className="text-xl font-bold font-headline uppercase tracking-tight">Manage Events</h2>
+              <h2 className="text-xl font-bold font-headline uppercase tracking-tight">Manage Registry</h2>
               <div className="space-y-4">
                 {eventsLoading ? (
                   <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
@@ -243,14 +271,14 @@ export default function AdminPage() {
                   <Card key={event.id} className={`border-border/50 ${event.isArchived ? 'opacity-50 grayscale' : ''}`}>
                     <CardContent className="p-4 flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <h4 className="font-bold text-sm truncate">{event.name}</h4>
-                        <p className="text-[10px] text-muted-foreground uppercase">{event.sport} • {event.startDate}</p>
+                        <h4 className="font-bold text-sm truncate uppercase tracking-tighter">{event.name}</h4>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">{event.sport} • {event.startDate}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleArchive(event)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" title={event.isArchived ? "Unarchive" : "Archive"} onClick={() => handleToggleArchive(event)}>
                           {event.isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(event.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" title="Delete Permanently" onClick={() => handleDelete(event.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

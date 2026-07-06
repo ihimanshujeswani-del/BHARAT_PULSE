@@ -6,7 +6,7 @@ import { EventCard } from "@/components/event-card";
 import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Award, Clock, Search, Filter, Trophy, Loader2, History } from "lucide-react";
+import { TrendingUp, Award, Clock, Search, Filter, Trophy, Loader2, History, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -24,7 +24,6 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   
   const db = useFirestore();
-  // Order by startDate DESC to show latest/most recent first
   const eventsQuery = useMemo(() => 
     db ? query(collection(db, "events") as CollectionReference<Event>, orderBy("startDate", "desc")) : null
   , [db]);
@@ -37,18 +36,15 @@ export default function Home() {
     const today = startOfDay(new Date());
 
     return firestoreEvents.filter((event) => {
-      // Basic Search & Sport Filters
       const matchesSearch = 
         (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
         (event.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
       const matchesLevel = levelFilter === "all" || event.level === levelFilter;
       
-      // Automatic History & Archive Filtering
       const eventEndDate = parseISO(event.endDate || event.startDate);
       const isPastEvent = isBefore(eventEndDate, today);
       
-      // If NOT showing history, filter out past events and archived events
       if (!showHistory) {
         if (isPastEvent || event.isArchived) return false;
       }
@@ -62,20 +58,35 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-12 border-b">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-16 border-b">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl">
+          <div className="max-w-4xl">
             <Badge className="mb-4 bg-accent/20 text-accent border-accent/20 px-3 py-1">
               Pulse of Indian Sports
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-bold font-headline leading-none mb-6 tracking-tight">
+            <h1 className="text-5xl md:text-7xl font-bold font-headline leading-none mb-6 tracking-tight uppercase">
               NEVER MISS A <span className="text-primary italic">MOMENT</span> OF GLORY.
             </h1>
+            <p className="text-xl md:text-2xl font-medium text-foreground mb-4 max-w-2xl">
+              Your dedicated hub for international and national sports events.
+            </p>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl">
               Tracking every stride, every shot, and every win for Indian athletes across the globe.
             </p>
+            
+            <div className="flex flex-wrap gap-6 mb-10">
+              <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span>Real-time tracking</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span>Verified updates</span>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8" asChild>
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 font-bold" asChild>
                 <a href="#explore">Explore Events</a>
               </Button>
             </div>
@@ -92,7 +103,7 @@ export default function Home() {
                 <Clock className="h-5 w-5" />
                 <span className="uppercase tracking-widest text-xs">Stay Updated</span>
               </div>
-              <h2 className="text-3xl font-bold font-headline">LATEST <span className="text-accent">EVENTS</span></h2>
+              <h2 className="text-3xl font-bold font-headline uppercase">LATEST <span className="text-accent">EVENTS</span></h2>
             </div>
             
             <div className="flex items-center gap-3 bg-card border px-4 py-2 rounded-full shadow-sm">

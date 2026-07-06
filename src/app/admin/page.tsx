@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,18 +10,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useFirestore } from "@/firebase/provider";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
+import { useCollection } from "@/firebase/firestore/use-collection";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_SPORTS } from "@/lib/mock-data";
-import { ArrowLeft, Loader2, Save, PlusCircle } from "lucide-react";
+import { Event } from "@/lib/types";
+import { ArrowLeft, Loader2, Save, PlusCircle, Trash2, Archive, ArchiveRestore } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const db = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
+
+  const eventsQuery = useMemo(() => 
+    db ? query(collection(db, "events"), orderBy("startDate", "desc")) : null
+  , [db]);
+  
+  const { data: events, loading: eventsLoading } = useCollection<Event>(eventsQuery as any);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -31,14 +37,15 @@ export default function AdminPage() {
     endDate: "",
     city: "",
     country: "",
-    level: "International",
-    status: "Upcoming",
+    level: "International" as const,
+    status: "Upcoming" as const,
     eventType: "Tournament",
     indianParticipants: "",
     eventUrl: "",
     streamUrl: "",
     qualificationEvent: false,
-    indianParticipation: true
+    indianParticipation: true,
+    isArchived: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,10 +67,9 @@ export default function AdminPage() {
 
       toast({
         title: "Success",
-        description: "Event has been successfully added to the database.",
+        description: "Event has been successfully added.",
       });
 
-      // Clear form
       setFormData({
         name: "",
         sport: "",
@@ -79,17 +85,43 @@ export default function AdminPage() {
         eventUrl: "",
         streamUrl: "",
         qualificationEvent: false,
-        indianParticipation: true
+        indianParticipation: true,
+        isArchived: false
       });
     } catch (error) {
       console.error("Error adding document: ", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save the event. Please try again.",
+        description: "Failed to save the event.",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!db || !confirm("Are you sure you want to delete this event?")) return;
+    try {
+      await deleteDoc(doc(db, "events", id));
+      toast({ title: "Deleted", description: "Event removed from database." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete." });
+    }
+  };
+
+  const handleToggleArchive = async (event: Event) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, "events", event.id), {
+        isArchived: !event.isArchived
+      });
+      toast({ 
+        title: event.isArchived ? "Unarchived" : "Archived", 
+        description: `Event has been ${event.isArchived ? 'restored' : 'archived'}.` 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Update failed." });
     }
   };
 
@@ -103,249 +135,133 @@ export default function AdminPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 flex-1">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Public View
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold font-headline">ADMIN <span className="text-primary">DASHBOARD</span></h1>
-              <p className="text-muted-foreground">Manage the BharatPulse Sports event database.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form Column */}
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="border-border/50 shadow-lg">
+                <CardHeader className="border-b bg-muted/30">
+                  <div className="flex items-center gap-2 text-primary">
+                    <PlusCircle className="h-5 w-5" />
+                    <CardTitle className="text-xl">Add New Sports Event</CardTitle>
+                  </div>
+                  <CardDescription>Fill in the details to list a new event.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-8">
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Event Name</Label>
+                          <Input id="name" name="name" required value={formData.name} onChange={handleInputChange} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="sport">Sport Name</Label>
+                            <Input id="sport" name="sport" required value={formData.sport} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="sportSlug">Category</Label>
+                            <Select value={formData.sportSlug} onValueChange={(v) => setFormData(p => ({ ...p, sportSlug: v }))}>
+                              <SelectTrigger><SelectValue placeholder="Sport" /></SelectTrigger>
+                              <SelectContent>
+                                {MOCK_SPORTS.filter(s => s.slug !== 'all').map((s) => (
+                                  <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="startDate">Start Date</Label>
+                            <Input id="startDate" name="startDate" type="date" required value={formData.startDate} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="endDate">End Date</Label>
+                            <Input id="endDate" name="endDate" type="date" required value={formData.endDate} onChange={handleInputChange} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="level">Level</Label>
+                            <Select value={formData.level} onValueChange={(v: any) => setFormData(p => ({ ...p, level: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="International">International</SelectItem>
+                                <SelectItem value="National">National</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="status">Status</Label>
+                            <Select value={formData.status} onValueChange={(v: any) => setFormData(p => ({ ...p, status: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Upcoming">Upcoming</SelectItem>
+                                <SelectItem value="Live">Live</SelectItem>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City</Label>
+                          <Input id="city" name="city" required value={formData.city} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="country">Country</Label>
+                          <Input id="country" name="country" required value={formData.country} onChange={handleInputChange} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="indianParticipants">Indian Participants (Comma separated)</Label>
+                      <Textarea id="indianParticipants" name="indianParticipants" value={formData.indianParticipants} onChange={handleInputChange} />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Event
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Management Column */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold font-headline uppercase tracking-tight">Manage Events</h2>
+              <div className="space-y-4">
+                {eventsLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+                ) : events?.map(event => (
+                  <Card key={event.id} className={`border-border/50 ${event.isArchived ? 'opacity-50 grayscale' : ''}`}>
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm truncate">{event.name}</h4>
+                        <p className="text-[10px] text-muted-foreground uppercase">{event.sport} • {event.startDate}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleArchive(event)}>
+                          {event.isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(event.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader className="border-b bg-muted/30">
-              <div className="flex items-center gap-2 text-primary">
-                <PlusCircle className="h-5 w-5" />
-                <CardTitle className="text-xl">Add New Sports Event</CardTitle>
-              </div>
-              <CardDescription>Fill in the details to list a new event on the platform.</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Event Basic Info */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Event Name</Label>
-                      <Input 
-                        id="name" 
-                        name="name" 
-                        placeholder="e.g. All England Open 2025" 
-                        required 
-                        value={formData.name}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="sport">Sport Name</Label>
-                        <Input 
-                          id="sport" 
-                          name="sport" 
-                          placeholder="e.g. Badminton" 
-                          required 
-                          value={formData.sport}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sportSlug">Sport Category</Label>
-                        <Select 
-                          value={formData.sportSlug} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, sportSlug: value }))}
-                        >
-                          <SelectTrigger id="sportSlug">
-                            <SelectValue placeholder="Select Sport" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MOCK_SPORTS.filter(s => s.slug !== 'all').map((sport) => (
-                              <SelectItem key={sport.id} value={sport.slug}>{sport.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="startDate">Start Date</Label>
-                        <Input 
-                          id="startDate" 
-                          name="startDate" 
-                          type="date" 
-                          required 
-                          value={formData.startDate}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endDate">End Date</Label>
-                        <Input 
-                          id="endDate" 
-                          name="endDate" 
-                          type="date" 
-                          required 
-                          value={formData.endDate}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">Host City</Label>
-                        <Input 
-                          id="city" 
-                          name="city" 
-                          placeholder="e.g. Birmingham" 
-                          required 
-                          value={formData.city}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input 
-                          id="country" 
-                          name="country" 
-                          placeholder="e.g. United Kingdom" 
-                          required 
-                          value={formData.country}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Secondary Details */}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="level">Competition Level</Label>
-                        <Select 
-                          value={formData.level} 
-                          onValueChange={(value: any) => setFormData(prev => ({ ...prev, level: value }))}
-                        >
-                          <SelectTrigger id="level">
-                            <SelectValue placeholder="Level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="International">International</SelectItem>
-                            <SelectItem value="National">National</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="status">Current Status</Label>
-                        <Select 
-                          value={formData.status} 
-                          onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}
-                        >
-                          <SelectTrigger id="status">
-                            <SelectValue placeholder="Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Upcoming">Upcoming</SelectItem>
-                            <SelectItem value="Live">Live</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="eventType">Event Type</Label>
-                      <Input 
-                        id="eventType" 
-                        name="eventType" 
-                        placeholder="e.g. BWF World Tour Super 1000" 
-                        value={formData.eventType}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="eventUrl">Official Website URL</Label>
-                      <Input 
-                        id="eventUrl" 
-                        name="eventUrl" 
-                        placeholder="https://..." 
-                        value={formData.eventUrl}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="streamUrl">Broadcasting/Stream URL</Label>
-                      <Input 
-                        id="streamUrl" 
-                        name="streamUrl" 
-                        placeholder="https://..." 
-                        value={formData.streamUrl}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded-lg bg-secondary/20">
-                      <div className="space-y-0.5">
-                        <Label>Qualification Event</Label>
-                        <p className="text-xs text-muted-foreground">Does this event offer qualification spots?</p>
-                      </div>
-                      <Switch 
-                        checked={formData.qualificationEvent}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, qualificationEvent: checked }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="indianParticipants">Indian Participants (Comma separated)</Label>
-                  <Textarea 
-                    id="indianParticipants" 
-                    name="indianParticipants" 
-                    placeholder="e.g. PV Sindhu, Lakshya Sen, HS Prannoy" 
-                    className="min-h-[100px]"
-                    value={formData.indianParticipants}
-                    onChange={handleInputChange}
-                  />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Separate names with commas</p>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <Button 
-                    type="submit" 
-                    className="w-full md:w-auto min-w-[200px] bg-primary hover:bg-primary/90" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" /> Save Event
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
         </div>
       </main>
-
-      <footer className="border-t py-6 bg-card/30">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest italic">
-            BharatPulse Admin Console &copy; 2025
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

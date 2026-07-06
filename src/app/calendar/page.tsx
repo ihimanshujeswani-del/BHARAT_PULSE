@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/navbar";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, query, orderBy, CollectionReference, Query } from "firebase/firestore";
+import { collection, query, orderBy, CollectionReference } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 import { Event } from "@/lib/types";
 import { 
@@ -24,11 +24,8 @@ import { cn } from "@/lib/utils";
 
 export default function CalendarPage() {
   const db = useFirestore();
-  
-  // Current view date (default to today)
   const [viewDate] = useState(new Date());
 
-  // Calculate Monday to Sunday for the current week of viewDate
   const weekStart = startOfWeek(viewDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(viewDate, { weekStartsOn: 1 });
   
@@ -36,17 +33,15 @@ export default function CalendarPage() {
     return eachDayOfInterval({ start: weekStart, end: weekEnd });
   }, [weekStart, weekEnd]);
 
-  // Fetch all events
+  // Ascending for calendar timeline
   const eventsQuery = useMemo(() => 
     db ? query(collection(db, "events") as CollectionReference<Event>, orderBy("startDate", "asc")) : null
   , [db]);
   
   const { data: events, loading } = useCollection<Event>(eventsQuery);
 
-  // Group events by day, showing on every day between startDate and endDate inclusive
   const eventsByDay = useMemo(() => {
     const map: Record<string, Event[]> = {};
-    
     if (!events) return map;
 
     weekDays.forEach(day => {
@@ -54,10 +49,12 @@ export default function CalendarPage() {
       const dayStart = startOfDay(day);
       
       map[dateKey] = events.filter(event => {
+        // Exclude archived events from the calendar view
+        if (event.isArchived) return false;
+        
         try {
           const start = startOfDay(parseISO(event.startDate));
           const end = endOfDay(parseISO(event.endDate || event.startDate));
-          
           return isWithinInterval(dayStart, { start, end });
         } catch (e) {
           return false;
@@ -71,7 +68,6 @@ export default function CalendarPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      
       <main className="container mx-auto px-4 py-8 flex-1">
         <header className="mb-10">
           <div className="flex items-center gap-2 text-primary font-bold mb-2">
@@ -150,14 +146,6 @@ export default function CalendarPage() {
           </div>
         )}
       </main>
-
-      <footer className="border-t py-6 bg-card/30 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest italic">
-            BharatPulse Sports Schedule &copy; 2025
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

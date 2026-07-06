@@ -5,28 +5,33 @@ import { Navbar } from "@/components/navbar";
 import { EventCard } from "@/components/event-card";
 import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, LayoutGrid, List, Loader2 } from "lucide-react";
+import { Search, Filter, Loader2, History } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
 import { Event } from "@/lib/types";
+import { isBefore, parseISO, startOfDay } from "date-fns";
 
 export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
+  const [showHistory, setShowHistory] = useState(false);
 
   const db = useFirestore();
   const eventsQuery = useMemo(() => 
-    db ? query(collection(db, "events"), orderBy("startDate", "asc")) : null
+    db ? query(collection(db, "events"), orderBy("startDate", "desc")) : null
   , [db]);
   
-  const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery);
+  const { data: firestoreEvents, loading } = useCollection<Event>(eventsQuery as any);
 
   const filteredEvents = useMemo(() => {
     if (!firestoreEvents) return [];
+    const today = startOfDay(new Date());
+
     return firestoreEvents.filter((event) => {
       const matchesSearch = 
         (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
@@ -34,18 +39,33 @@ export default function EventsPage() {
       const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
       const matchesLevel = levelFilter === "all" || event.level === levelFilter;
       
+      const eventEndDate = parseISO(event.endDate || event.startDate);
+      const isPastEvent = isBefore(eventEndDate, today);
+      
+      if (!showHistory) {
+        if (isPastEvent || event.isArchived) return false;
+      }
+      
       return matchesSearch && matchesSport && matchesLevel;
     });
-  }, [firestoreEvents, searchQuery, sportFilter, levelFilter]);
+  }, [firestoreEvents, searchQuery, sportFilter, levelFilter, showHistory]);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 flex-1">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold font-headline mb-4">EXPLORE <span className="text-primary">ALL EVENTS</span></h1>
-          <p className="text-muted-foreground">Browse through all upcoming international and national sports competitions.</p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold font-headline mb-4">EXPLORE <span className="text-primary">ALL EVENTS</span></h1>
+            <p className="text-muted-foreground">Browse through all upcoming international and national sports competitions.</p>
+          </div>
+          
+          <div className="flex items-center gap-3 bg-card border px-4 py-2 rounded-full shadow-sm">
+            <History className={`h-4 w-4 ${showHistory ? 'text-primary' : 'text-muted-foreground'}`} />
+            <Label htmlFor="history-mode" className="text-xs font-bold uppercase cursor-pointer">Show History</Label>
+            <Switch id="history-mode" checked={showHistory} onCheckedChange={setShowHistory} />
+          </div>
         </div>
 
         {/* Search and Filters Bar */}
@@ -53,7 +73,7 @@ export default function EventsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by event name or city..."
+              placeholder="Search events..."
               className="pl-10 bg-background border-border/50 focus:ring-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -68,9 +88,7 @@ export default function EventsPage() {
                   <SelectValue placeholder="All Sports" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MOCK_SPORTS.map(s => (
-                    <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>
-                  ))}
+                  {MOCK_SPORTS.map(s => <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -85,15 +103,6 @@ export default function EventsPage() {
                 <SelectItem value="National">National</SelectItem>
               </SelectContent>
             </Select>
-
-            <div className="hidden sm:flex border-l pl-4 gap-1">
-              <Button variant="ghost" size="icon" className="h-9 w-9 bg-primary/10 text-primary">
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -112,7 +121,7 @@ export default function EventsPage() {
           <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
             <Search className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-xl font-bold mb-2">No matching events</h3>
-            <p className="max-w-xs mx-auto">Try adjusting your filters or search terms to find what you're looking for.</p>
+            <p className="max-w-xs mx-auto">Try enabling History mode or adjusting filters.</p>
           </div>
         )}
       </main>

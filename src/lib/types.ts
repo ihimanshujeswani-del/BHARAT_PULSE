@@ -22,4 +22,5 @@ export interface Event {
   status: 'Upcoming' | 'Live' | 'Completed';
   eventUrl: string;
   streamUrl?: string;
+  isArchived?: boolean;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, MapPin, Users, ChevronRight, Star } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronRight } from "lucide-react";
 import { Event } from "@/lib/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,10 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
-  // Safe check for participants array
   const participants = Array.isArray(event.indianParticipants)
     ? event.indianParticipants
     : [];
 
-  // Safe check for date
   const formattedDate = event.startDate 
     ? new Date(event.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
     : 'TBD';
@@ -46,18 +44,18 @@ export function EventCard({ event }: EventCardProps) {
       <CardContent className="p-5 space-y-4">
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 text-primary" />
+            <Calendar className="h-4 w-4 text-primary" aria-hidden="true" />
             <span>{formattedDate}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4 text-primary" />
+            <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
             <span className="truncate">{event.city || "TBD"}</span>
           </div>
         </div>
         
         <div className="flex items-center gap-2 pt-2">
-          <Users className="h-4 w-4 text-accent" />
-          <div className="flex -space-x-2">
+          <Users className="h-4 w-4 text-accent" aria-hidden="true" />
+          <div className="flex -space-x-2" aria-label={`Indian participants: ${participants.length > 0 ? participants.join(', ') : 'None listed'}`}>
             {participants.slice(0, 3).map((p, i) => (
               <div key={i} className="h-6 w-6 rounded-full bg-secondary border border-background flex items-center justify-center text-[8px] font-bold" title={p}>
                 {p.split(' ').map(n => n[0]).join('')}
@@ -69,7 +67,7 @@ export function EventCard({ event }: EventCardProps) {
               </div>
             )}
             {participants.length === 0 && (
-               <div className="h-6 w-6 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-bold" title="No official list yet">
+               <div className="h-6 w-6 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-bold">
                 ?
               </div>
             )}
@@ -83,9 +81,10 @@ export function EventCard({ event }: EventCardProps) {
         <Link 
           href={`/events/${event.id}`}
           className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary transition-colors text-sm font-semibold"
+          aria-label={`View details for ${event.name}`}
         >
           View Details
-          <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
         </Link>
       </CardFooter>
     </Card>

@@ -53,11 +53,8 @@ export default function Home() {
         return matchesSearch && matchesSport && matchesLevel;
       })
       .sort((a, b) => {
-        // First priority: Featured events
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
-        
-        // Second priority: Start date descending (already handled by firestore but ensure it here for secondary sorting)
         return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
       });
   }, [firestoreEvents, searchQuery, sportFilter, levelFilter, showHistory]);
@@ -67,7 +64,7 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-16 border-b">
+      <header className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-20 pb-16 border-b">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl">
             <Badge className="mb-4 bg-accent/20 text-accent border-accent/20 px-3 py-1">
@@ -77,7 +74,7 @@ export default function Home() {
               NEVER MISS A <span className="text-primary italic">MOMENT</span> OF GLORY.
             </h1>
             <p className="text-xl md:text-2xl font-medium text-foreground mb-4 max-w-2xl">
-              Your dedicated hub for international and national sports events.
+              Your dedicated hub for international and national sports events where Indians compete.
             </p>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl">
               Tracking every stride, every shot, and every win for Indian athletes across the globe.
@@ -85,43 +82,44 @@ export default function Home() {
             
             <div className="flex flex-wrap gap-6 mb-10">
               <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span>Real-time tracking</span>
               </div>
               <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span>Verified updates</span>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4">
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 font-bold" asChild>
-                <a href="#explore">Explore Events</a>
+                <a href="#explore">Explore Latest Events</a>
               </Button>
             </div>
           </div>
         </div>
-      </section>
+      </header>
 
       {/* Main Content */}
       <main id="explore" className="container mx-auto px-4 py-12 flex-1 scroll-mt-20">
-        <div className="flex flex-col gap-8">
+        <section className="flex flex-col gap-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-primary font-bold mb-2">
-                <Clock className="h-5 w-5" />
+                <Clock className="h-5 w-5" aria-hidden="true" />
                 <span className="uppercase tracking-widest text-xs">Stay Updated</span>
               </div>
-              <h2 className="text-3xl font-bold font-headline uppercase">LATEST <span className="text-accent">EVENTS</span></h2>
+              <h2 className="text-3xl font-bold font-headline uppercase">LATEST <span className="text-accent">SPORTS EVENTS</span></h2>
             </div>
             
             <div className="flex items-center gap-3 bg-card border px-4 py-2 rounded-full shadow-sm">
-              <History className={`h-4 w-4 ${showHistory ? 'text-primary' : 'text-muted-foreground'}`} />
+              <History className={`h-4 w-4 ${showHistory ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
               <Label htmlFor="history-mode" className="text-xs font-bold uppercase cursor-pointer">Show History & Archives</Label>
               <Switch 
                 id="history-mode" 
                 checked={showHistory} 
                 onCheckedChange={setShowHistory} 
+                aria-label="Toggle history mode"
               />
             </div>
           </div>
@@ -129,41 +127,52 @@ export default function Home() {
           {/* Search and Filters Bar */}
           <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input
-                placeholder="Search events..."
+                placeholder="Search events by name or city..."
                 className="pl-10 bg-background border-border/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search events"
               />
             </div>
             
             <div className="flex flex-wrap gap-4 items-center">
-              <Select value={sportFilter} onValueChange={setSportFilter}>
-                <SelectTrigger className="w-[160px] bg-background"><SelectValue placeholder="All Sports" /></SelectTrigger>
-                <SelectContent>
-                  {MOCK_SPORTS.map(s => <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="sport-filter" className="sr-only">Filter by Sport</Label>
+                <Select value={sportFilter} onValueChange={setSportFilter}>
+                  <SelectTrigger id="sport-filter" className="w-[160px] bg-background">
+                    <SelectValue placeholder="All Sports" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOCK_SPORTS.map(s => <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[160px] bg-background"><SelectValue placeholder="All Levels" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="International">International</SelectItem>
-                  <SelectItem value="National">National</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="level-filter" className="sr-only">Filter by Level</Label>
+                <Select value={levelFilter} onValueChange={setLevelFilter}>
+                  <SelectTrigger id="level-filter" className="w-[160px] bg-background">
+                    <SelectValue placeholder="All Levels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="International">International</SelectItem>
+                    <SelectItem value="National">National</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
+            <div className="flex flex-col items-center justify-center py-20" role="status">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
               <p className="text-muted-foreground">Syncing latest events...</p>
             </div>
           ) : filteredEvents.length > 0 ? (
-            <div className="sports-grid">
+            <div className="sports-grid" aria-label="Events Grid">
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
@@ -171,18 +180,18 @@ export default function Home() {
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="bg-secondary p-4 rounded-full mb-4">
-                <Trophy className="h-8 w-8 text-muted-foreground opacity-20" />
+                <Trophy className="h-8 w-8 text-muted-foreground opacity-20" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-bold mb-2">No events found</h3>
-              <p className="text-muted-foreground">Try toggling &quot;Show History&quot; to see past and archived events.</p>
+              <p className="text-muted-foreground">Try toggling &quot;Show History&quot; or adjusting your search filters.</p>
             </div>
           )}
-        </div>
+        </section>
       </main>
 
-      <footer className="border-t py-8 bg-card/30">
+      <footer className="border-t py-8 bg-card/30" role="contentinfo">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">© 2025 BharatPulse Media. Tracking Indian sports glory.</p>
+          <p className="text-sm text-muted-foreground">© 2025 BharatPulse Media. Tracking Indian sports glory worldwide.</p>
         </div>
       </footer>
     </div>

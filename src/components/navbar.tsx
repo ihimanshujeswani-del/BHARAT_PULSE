@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md" role="navigation" aria-label="Main Navigation">
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-primary p-1.5 rounded-lg group-hover:rotate-12 transition-transform">
+        <Link href="/" className="flex items-center gap-2 group" aria-label="BharatPulse Sports Home">
+          <div className="bg-primary p-1.5 rounded-lg group-hover:rotate-12 transition-transform" aria-hidden="true">
             <Trophy className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-headline text-xl font-bold tracking-tighter">
@@ -22,20 +22,23 @@ export function Navbar() {
             <Link href="/" className="text-sm font-semibold hover:text-primary transition-colors">
               Home
             </Link>
+            <Link href="/events" className="text-sm font-semibold hover:text-primary transition-colors">
+              Explore Events
+            </Link>
             <Link href="/calendar" className="text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4" aria-hidden="true" />
               Calendar
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild className="md:hidden">
+            <Button variant="ghost" size="icon" asChild className="md:hidden" aria-label="View Calendar">
               <Link href="/calendar">
                 <Calendar className="h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" asChild className="md:hidden">
-              <Link href="/#explore">
+            <Button variant="ghost" size="icon" asChild className="md:hidden" aria-label="Search Events">
+              <Link href="/events">
                 <Search className="h-5 w-5" />
               </Link>
             </Button>

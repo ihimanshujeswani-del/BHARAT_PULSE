@@ -15,7 +15,7 @@ import { useCollection } from "@/firebase/firestore/use-collection";
 import { useToast } from "@/hooks/use-toast";
 import { MOCK_SPORTS } from "@/lib/mock-data";
 import { Event } from "@/lib/types";
-import { ArrowLeft, Loader2, Save, PlusCircle, Trash2, Archive, ArchiveRestore, Globe, Tv } from "lucide-react";
+import { ArrowLeft, Loader2, Save, PlusCircle, Trash2, Archive, ArchiveRestore, Globe, Tv, Star } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -45,7 +45,8 @@ export default function AdminPage() {
     streamUrl: "",
     qualificationEvent: false,
     indianParticipation: true,
-    isArchived: false
+    isArchived: false,
+    featured: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +87,8 @@ export default function AdminPage() {
         streamUrl: "",
         qualificationEvent: false,
         indianParticipation: true,
-        isArchived: false
+        isArchived: false,
+        featured: false
       });
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -119,6 +121,21 @@ export default function AdminPage() {
       toast({ 
         title: event.isArchived ? "Unarchived" : "Archived", 
         description: `Event has been ${event.isArchived ? 'restored' : 'archived'}.` 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Update failed." });
+    }
+  };
+
+  const handleToggleFeatured = async (event: Event) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, "events", event.id), {
+        featured: !event.featured
+      });
+      toast({ 
+        title: event.featured ? "Unfeatured" : "Featured", 
+        description: `Event is ${event.featured ? 'no longer' : 'now'} featured.` 
       });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Update failed." });
@@ -244,13 +261,24 @@ export default function AdminPage() {
                       <Textarea id="indianParticipants" name="indianParticipants" placeholder="e.g. Neeraj Chopra, Kishore Jena" value={formData.indianParticipants} onChange={handleInputChange} />
                     </div>
                     
-                    <div className="flex items-center space-x-2 py-2">
-                      <Switch 
-                        id="qualificationEvent" 
-                        checked={formData.qualificationEvent} 
-                        onCheckedChange={(checked) => setFormData(p => ({...p, qualificationEvent: checked}))} 
-                      />
-                      <Label htmlFor="qualificationEvent">This is a qualification event (e.g. Olympic Qualifier)</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2 py-2">
+                        <Switch 
+                          id="qualificationEvent" 
+                          checked={formData.qualificationEvent} 
+                          onCheckedChange={(checked) => setFormData(p => ({...p, qualificationEvent: checked}))} 
+                        />
+                        <Label htmlFor="qualificationEvent">Qualification Event</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 py-2">
+                        <Switch 
+                          id="featured" 
+                          checked={formData.featured} 
+                          onCheckedChange={(checked) => setFormData(p => ({...p, featured: checked}))} 
+                        />
+                        <Label htmlFor="featured" className="text-primary font-bold">Featured Event 🔥</Label>
+                      </div>
                     </div>
 
                     <Button type="submit" className="w-full h-12 text-base font-bold" disabled={loading}>
@@ -271,10 +299,22 @@ export default function AdminPage() {
                   <Card key={event.id} className={`border-border/50 ${event.isArchived ? 'opacity-50 grayscale' : ''}`}>
                     <CardContent className="p-4 flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <h4 className="font-bold text-sm truncate uppercase tracking-tighter">{event.name}</h4>
+                        <div className="flex items-center gap-1">
+                          {event.featured && <Star className="h-3 w-3 fill-primary text-primary" />}
+                          <h4 className="font-bold text-sm truncate uppercase tracking-tighter">{event.name}</h4>
+                        </div>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold">{event.sport} • {event.startDate}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={`h-8 w-8 hover:bg-primary/10 ${event.featured ? 'text-primary' : 'text-muted-foreground'}`} 
+                          title={event.featured ? "Unfeature" : "Feature"} 
+                          onClick={() => handleToggleFeatured(event)}
+                        >
+                          <Star className={`h-4 w-4 ${event.featured ? 'fill-primary' : ''}`} />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" title={event.isArchived ? "Unarchive" : "Archive"} onClick={() => handleToggleArchive(event)}>
                           {event.isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                         </Button>

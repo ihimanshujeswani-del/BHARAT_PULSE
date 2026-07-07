@@ -23,4 +23,5 @@ export interface Event {
   eventUrl: string;
   streamUrl?: string;
   isArchived?: boolean;
+  featured?: boolean;
 }

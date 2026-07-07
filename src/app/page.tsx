@@ -35,22 +35,31 @@ export default function Home() {
     
     const today = startOfDay(new Date());
 
-    return firestoreEvents.filter((event) => {
-      const matchesSearch = 
-        (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-        (event.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
-      const matchesLevel = levelFilter === "all" || event.level === levelFilter;
-      
-      const eventEndDate = parseISO(event.endDate || event.startDate);
-      const isPastEvent = isBefore(eventEndDate, today);
-      
-      if (!showHistory) {
-        if (isPastEvent || event.isArchived) return false;
-      }
-      
-      return matchesSearch && matchesSport && matchesLevel;
-    });
+    return firestoreEvents
+      .filter((event) => {
+        const matchesSearch = 
+          (event.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+          (event.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+        const matchesSport = sportFilter === "all" || event.sportSlug === sportFilter;
+        const matchesLevel = levelFilter === "all" || event.level === levelFilter;
+        
+        const eventEndDate = parseISO(event.endDate || event.startDate);
+        const isPastEvent = isBefore(eventEndDate, today);
+        
+        if (!showHistory) {
+          if (isPastEvent || event.isArchived) return false;
+        }
+        
+        return matchesSearch && matchesSport && matchesLevel;
+      })
+      .sort((a, b) => {
+        // First priority: Featured events
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        
+        // Second priority: Start date descending (already handled by firestore but ensure it here for secondary sorting)
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      });
   }, [firestoreEvents, searchQuery, sportFilter, levelFilter, showHistory]);
 
   return (

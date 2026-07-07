@@ -10,15 +10,16 @@ export function initializeFirebase(): {
   firestore: Firestore | null;
   auth: Auth | null;
 } {
-  // Prevent initialization during SSR if config is missing or on server
-  if (typeof window === 'undefined' || !isFirebaseConfigValid) {
+  // Config must be valid to initialize
+  if (!isFirebaseConfigValid) {
     return { app: null, firestore: null, auth: null };
   }
 
   try {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const firestore = getFirestore(app);
-    const auth = getAuth(app);
+    // Auth only works in the browser environment
+    const auth = typeof window !== 'undefined' ? getAuth(app) : null;
 
     return { app, firestore, auth };
   } catch (error) {

@@ -6,11 +6,11 @@ import { getDocs, collection, query, where } from 'firebase/firestore'
  * Sitemap generator for BharatPulse Sports.
  * Dynamically generates URLs for static routes and all public events from Firestore.
  * 
- * To update the domain, set the NEXT_PUBLIC_SITE_URL environment variable.
+ * It uses the NEXT_PUBLIC_SITE_URL environment variable to determine the base domain.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Use environment variable for the base URL, falling back to the known public domain
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://bharatpulse-sports.web.app').replace(/\/$/, '')
+  // Use environment variable for the base URL, falling back to the current Vercel production domain
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://bharat-pulse-flax.vercel.app').replace(/\/$/, '')
   
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -33,17 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Initialize Firebase using the client SDK (Node-compatible in Server Components)
-  // to fetch all active event IDs for sitemap inclusion
+  // Initialize Firebase to fetch all active event IDs for sitemap inclusion
   const { firestore } = initializeFirebase()
   
-  // If Firestore fails to initialize (e.g., build time env vars missing), return static routes
+  // If Firestore fails to initialize, return static routes only
   if (!firestore) return staticRoutes
 
   try {
     // Fetch events that are not archived to include in the search index
-    // Note: 'isArchived' != true captures both 'false' and undefined/null in most scenarios
-    // but for Firestore we usually check if it is not true.
     const eventsQuery = query(collection(firestore, 'events'), where('isArchived', '!=', true))
     const snapshot = await getDocs(eventsQuery)
     
@@ -60,8 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [...staticRoutes, ...eventRoutes]
   } catch (error) {
-    // Graceful fallback to static routes if database read fails during build/generation
-    console.error('Sitemap generation failed to fetch events:', error)
+    console.error('Sitemap generation failed to fetch dynamic events:', error)
     return staticRoutes
   }
 }

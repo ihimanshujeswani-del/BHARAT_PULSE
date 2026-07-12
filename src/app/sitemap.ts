@@ -42,6 +42,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Fetch events that are not archived to include in the search index
+    // Note: 'isArchived' != true captures both 'false' and undefined/null in most scenarios
+    // but for Firestore we usually check if it is not true.
     const eventsQuery = query(collection(firestore, 'events'), where('isArchived', '!=', true))
     const snapshot = await getDocs(eventsQuery)
     
@@ -50,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return {
         url: `${baseUrl}/events/${doc.id}`,
         // Use document timestamp if available, otherwise current date
-        lastModified: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+        lastModified: data.createdAt ? new Date(data.createdAt) : new Date(),
         changeFrequency: 'weekly',
         priority: 0.6,
       }

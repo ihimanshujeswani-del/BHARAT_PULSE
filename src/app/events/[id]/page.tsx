@@ -7,12 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, MapPin, ExternalLink, ArrowLeft, 
-  Users, Info, Trophy, Flag, ShieldCheck, PlayCircle, Loader2
+  Users, Info, Trophy, Flag, PlayCircle, Loader2, CalendarIcon
 } from "lucide-react";
 import Link from "next/link";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { doc, DocumentReference } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
+import { generateGoogleCalendarUrl } from "@/lib/calendar";
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,6 +24,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   , [db, id]);
   
   const { data: event, loading } = useDoc<Event>(eventRef);
+
+  const handleAddToCalendar = () => {
+    if (!event) return;
+    const url = generateGoogleCalendarUrl(event);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   if (loading) {
     return (
@@ -203,12 +210,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             <div className="space-y-8">
               <div className="p-6 rounded-xl bg-gradient-to-br from-secondary/50 to-card border border-border/50 space-y-4">
                 <div className="flex items-center gap-2 text-primary">
-                  <ShieldCheck className="h-5 w-5" />
-                  <h3 className="font-bold">Official Verification</h3>
+                  <CalendarIcon className="h-5 w-5" />
+                  <h3 className="font-bold">Add to Calendar</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  This event data is synchronized with the Central Sports Repository and verified through official federation sources.
+                  Add this event to your Google Calendar to get a reminder.
                 </p>
+                <Button onClick={handleAddToCalendar} className="w-full">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Add to Calendar
+                </Button>
               </div>
 
               <div className="flex items-center gap-4 justify-center py-4 opacity-50 grayscale">
